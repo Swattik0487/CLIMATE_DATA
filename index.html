@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeoIndia Climate Hub</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+--primary:#0f4c5c;
+--primary-dark:#0a3540;
+--secondary:#0e9594;
+--accent:#f4a261;
+--danger:#d7263d;
+--bg:#f2f6f7;
+--card:#ffffff;
+--text:#1e293b;
+--muted:#64748b;
+--border:#e2e8f0;
+}
+*{box-sizing:border-box;}
+body{
+font-family:'Inter',Arial,sans-serif;
+margin:0;
+padding:0;
+background:var(--bg);
+color:var(--text);
+line-height:1.5;
+}
+h1,h2,h3{
+font-family:'Poppins',sans-serif;
+}
+a{color:var(--secondary);}
+
+/* ---------- Nav ---------- */
+.navbar{
+position:sticky;
+top:0;
+z-index:1000;
+background:var(--primary);
+color:white;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:14px 30px;
+box-shadow:0 2px 10px rgba(0,0,0,0.15);
+flex-wrap:wrap;
+}
+.navbar .brand{
+font-family:'Poppins',sans-serif;
+font-weight:700;
+font-size:20px;
+display:flex;
+align-items:center;
+gap:8px;
+}
+.navbar nav{
+display:flex;
+gap:6px;
+flex-wrap:wrap;
+}
+.navbar nav a{
+color:white;
+text-decoration:none;
+font-size:14px;
+font-weight:500;
+padding:8px 12px;
+border-radius:6px;
+transition:background 0.2s;
+}
+.navbar nav a:hover{
+background:rgba(255,255,255,0.15);
+}
+
+/* ---------- Hero ---------- */
+.hero{
+background:linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%);
+color:white;
+padding:60px 20px;
+text-align:center;
+}
+.hero h1{
+font-size:36px;
+margin-bottom:10px;
+}
+.hero p{
+font-size:16px;
+opacity:0.92;
+max-width:700px;
+margin:auto;
+}
+
+/* ---------- Generic section / card ---------- */
+.section{
+max-width:900px;
+margin:36px auto;
+padding:0 20px;
+}
+.card{
+background:var(--card);
+border-radius:14px;
+padding:28px;
+box-shadow:0 4px 18px rgba(15,76,92,0.08);
+border:1px solid var(--border);
+}
+.section-title{
+text-align:center;
+margin-bottom:6px;
+color:var(--primary-dark);
+}
+.section-subtitle{
+text-align:center;
+color:var(--muted);
+font-size:14px;
+margin-bottom:22px;
+}
+label{
+font-weight:600;
+font-size:14px;
+color:var(--primary-dark);
+display:block;
+margin-top:14px;
+margin-bottom:6px;
+}
+input,select{
+width:100%;
+padding:12px;
+border-radius:8px;
+border:1px solid var(--border);
+font-size:15px;
+background:white;
+font-family:'Inter',sans-serif;
+}
+input:focus,select:focus{
+outline:2px solid var(--secondary);
+border-color:var(--secondary);
+}
+button{
+padding:12px 18px;
+background:var(--secondary);
+color:white;
+border:none;
+border-radius:8px;
+font-size:15px;
+font-weight:600;
+cursor:pointer;
+margin-top:14px;
+transition:background 0.2s, transform 0.1s;
+}
+button:hover{
+background:var(--primary);
+}
+button:active{
+transform:scale(0.98);
+}
+.btn-row{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+}
+.btn-row button{flex:1;min-width:160px;}
+.btn-outline{
+background:white;
+color:var(--secondary);
+border:2px solid var(--secondary);
+}
+.btn-outline:hover{
+background:var(--secondary);
+color:white;
+}
+
+#deviceInfo{
+margin-bottom:16px;
+padding:10px 14px;
+background:#eef6f6;
+border-left:4px solid var(--secondary);
+border-radius:6px;
+font-size:13px;
+color:var(--primary-dark);
+}
+
+/* ---------- Result / status boxes ---------- */
+.result-box{
+margin-top:16px;
+padding:16px;
+background:#f8fafb;
+border-radius:10px;
+min-height:20px;
+border:1px solid var(--border);
+}
+.loading-text{
+color:var(--secondary);
+font-weight:600;
+}
+.error-text{
+color:var(--danger);
+font-weight:600;
+}
+.data-grid{
+display:flex;
+flex-wrap:wrap;
+gap:10px;
+justify-content:space-between;
+}
+.data-tile{
+flex:1 1 30%;
+background:white;
+border:1px solid var(--border);
+border-radius:10px;
+padding:12px;
+text-align:center;
+min-width:110px;
+}
+.data-tile b{
+display:block;
+margin-bottom:6px;
+color:var(--primary-dark);
+}
+
+/* ---------- Search bar ---------- */
+.search-row{
+display:flex;
+gap:8px;
+margin-top:10px;
+}
+.search-row input{flex:1;}
+.search-row button{
+margin-top:0;
+white-space:nowrap;
+}
+.search-results{
+margin-top:8px;
+border:1px solid var(--border);
+border-radius:8px;
+overflow:hidden;
+display:none;
+}
+.search-results div{
+padding:10px 14px;
+cursor:pointer;
+font-size:14px;
+border-bottom:1px solid var(--border);
+}
+.search-results div:last-child{border-bottom:none;}
+.search-results div:hover{
+background:#eef6f6;
+}
+
+/* ---------- GIS map ---------- */
+#mapView{
+width:100%;
+height:520px;
+border-radius:10px;
+margin-top:15px;
+border:1px solid var(--border);
+}
+.geo-legend{
+margin-top:15px;
+padding:14px;
+background:#f8fafb;
+border-radius:10px;
+font-size:13px;
+border:1px solid var(--border);
+}
+.legend-scale{
+display:flex;
+height:18px;
+border-radius:5px;
+overflow:hidden;
+margin-top:6px;
+margin-bottom:6px;
+}
+.legend-scale div{flex:1;}
+.legend-labels{
+display:flex;
+justify-content:space-between;
+font-size:12px;
+color:var(--muted);
+}
+.geo-status{
+margin-top:10px;
+font-weight:600;
+color:var(--secondary);
+font-size:14px;
+}
+.draw-analysis{
+margin-top:14px;
+padding:14px;
+background:#fff8ef;
+border:1px solid #f4d9a0;
+border-radius:10px;
+font-size:14px;
+display:none;
+}
+
+/* ---------- Hazard / news lists ---------- */
+.news-list, .quake-list{
+margin-top:16px;
+display:flex;
+flex-direction:column;
+gap:10px;
+}
+.news-item, .quake-item{
+padding:12px 14px;
+background:#f8fafb;
+border-left:4px solid var(--accent);
+border-radius:6px;
+font-size:14px;
+}
+.news-item a{
+font-weight:600;
+color:var(--primary-dark);
+text-decoration:none;
+}
+.news-item a:hover{text-decoration:underline;}
+.news-item .meta{
+color:var(--muted);
+font-size:12px;
+margin-top:4px;
+}
+.quake-item{border-left-color:var(--danger);}
+
+.advisory-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:16px;
+margin-top:16px;
+}
+.advisory-card{
+background:#f8fafb;
+border:1px solid var(--border);
+border-radius:10px;
+padding:16px;
+}
+.advisory-card h4{
+margin-top:0;
+color:var(--primary-dark);
+}
+.advisory-card a{
+display:inline-block;
+margin-top:8px;
+font-size:13px;
+font-weight:600;
+}
+.tag{
+display:inline-block;
+font-size:11px;
+font-weight:700;
+padding:3px 8px;
+border-radius:20px;
+background:var(--secondary);
+color:white;
+margin-bottom:8px;
+}
+.tag.warn{background:var(--danger);}
+
+/* ---------- Footer ---------- */
+footer{
+background:var(--primary-dark);
+color:#cfe3e6;
+margin-top:60px;
+padding:40px 20px 20px;
+}
+.footer-inner{
+max-width:1000px;
+margin:auto;
+display:grid;
+grid-template-columns:1.3fr 1fr 1fr;
+gap:30px;
+}
+.footer-inner h4{
+color:white;
+margin-top:0;
+font-size:15px;
+}
+.footer-inner p, .footer-inner li{
+font-size:13px;
+color:#b9d4d7;
+}
+.footer-inner ul{
+list-style:none;
+padding:0;
+margin:0;
+}
+.footer-inner li{
+margin-bottom:6px;
+}
+.footer-inner a{
+color:#9fd4d3;
+text-decoration:none;
+}
+.footer-inner a:hover{text-decoration:underline;}
+.footer-bottom{
+text-align:center;
+margin-top:30px;
+padding-top:18px;
+border-top:1px solid rgba(255,255,255,0.12);
+font-size:13px;
+color:#a9c6c9;
+}
+
+@media(max-width:768px){
+.section{padding:0 14px;}
+.card{padding:18px;}
+#mapView{height:400px;}
+.advisory-grid{grid-template-columns:1fr;}
+.footer-inner{grid-template-columns:1fr;}
+.navbar{padding:12px 16px;}
+.navbar nav a{font-size:13px;padding:6px 9px;}
+.hero h1{font-size:26px;}
+}
+</style>
+</head>
+<body>
+
+<div class="navbar">
+<div class="brand">🌏 GeoIndia Climate Hub</div>
+<nav>
+<a href="#register">Register</a>
+<a href="#weather">Weather</a>
+<a href="#gis">GIS Map</a>
+<a href="#flood">Flood Watch</a>
+<a href="#hazards">Hazards</a>
+<a href="#news">Climate News</a>
+</nav>
+</div>
+
+<div class="hero">
+<h1>India Climate &amp; Geomatics Hub</h1>
+<p>Live weather, air quality, flood forecasts, seismic activity and an interactive GIS
+planning tool for any location in India — powered entirely by free, open APIs.</p>
+</div>
+
+<!-- ================= REGISTRATION ================= -->
+<div class="section" id="register">
+<div class="card">
+<h2 class="section-title">Registration Form</h2>
+<div id="deviceInfo"></div>
+<input type="text" id="name" placeholder="Enter Name">
+<input type="email" id="email" placeholder="Enter Email">
+<input type="tel" id="phone" placeholder="Enter Phone Number">
+<button onclick="sendMail()" style="width:100%;">Submit</button>
+</div>
+</div>
+
+<!-- ================= WEATHER EXPLORER ================= -->
+<div class="section" id="weather">
+<div class="card">
+<h2 class="section-title">India Weather Forecast</h2>
+<p class="section-subtitle">Pick a mega city, or search any place in India, then choose which Open-Meteo dataset to view.</p>
+
+<label for="citySearchInput">Search any location in India</label>
+<div class="search-row">
+<input type="text" id="citySearchInput" placeholder="e.g. Shillong, Nashik, Leh...">
+<button onclick="searchLocation()">Search</button>
+</div>
+<div class="search-results" id="citySearchResults"></div>
+
+<label for="citySelect">Or choose a preset mega city</label>
+<select id="citySelect">
+<option value="28.6139,77.2090">Delhi</option>
+<option value="19.0760,72.8777">Mumbai</option>
+<option value="22.5726,88.3639">Kolkata</option>
+<option value="13.0827,80.2707">Chennai</option>
+<option value="12.9716,77.5946">Bengaluru</option>
+<option value="17.3850,78.4867">Hyderabad</option>
+<option value="18.5204,73.8567">Pune</option>
+<option value="23.0225,72.5714">Ahmedabad</option>
+<option value="26.9124,75.7873">Jaipur</option>
+<option value="26.8467,80.9462">Lucknow</option>
+</select>
+
+<label for="apiSelect">Choose Open-Meteo dataset</label>
+<select id="apiSelect">
+<option value="forecast">Weather Forecast (7-day, daily)</option>
+<option value="hourly">Weather Forecast (Hourly, next 24h)</option>
+<option value="current">Current Weather (live conditions)</option>
+<option value="airquality">Air Quality API (PM2.5, PM10, AQI)</option>
+<option value="historical">Historical Weather (past 7 days)</option>
+<option value="marine">Marine Weather (wave height) - coastal cities</option>
+<option value="geocoding">Geocoding API (search a place by name)</option>
+</select>
+
+<button onclick="getWeather()" style="width:100%;">Get Weather Data</button>
+
+<div id="weatherResult" class="result-box"></div>
+</div>
+</div>
+
+<!-- ================= GIS MAP + DRAW TOOL ================= -->
+<div class="section" id="gis">
+<div class="card">
+<h2 class="section-title">Geomatics Analysis &amp; GIS Planning Map</h2>
+<p class="section-subtitle">Search any place, draw your own area of interest, and run live spatial analysis across all 10 mega cities.</p>
+
+<label for="geoSearchInput">Search any location to add to the map</label>
+<div class="search-row">
+<input type="text" id="geoSearchInput" placeholder="e.g. Varanasi, Kochi, Guwahati...">
+<button onclick="searchLocationOnMap()">Locate</button>
+</div>
+<div class="search-results" id="geoSearchResults"></div>
+
+<label for="layerSelect">Choose layer to analyze (10 mega cities)</label>
+<select id="layerSelect">
+<option value="temperature">Temperature (&deg;C)</option>
+<option value="windspeed">Wind Speed (km/h)</option>
+<option value="humidity">Relative Humidity (%)</option>
+<option value="aqi">Air Quality Index (US AQI)</option>
+<option value="pm25">PM2.5 Concentration</option>
+</select>
+
+<div class="btn-row">
+<button onclick="runGeomaticsAnalysis()">Run Geomatics Analysis</button>
+<button class="btn-outline" onclick="clearDrawnShapes()">Clear My Drawings</button>
+</div>
+
+<p style="font-size:13px;color:var(--muted);margin-top:14px;">
+Use the draw tools on the top-left of the map (marker / polygon / rectangle / circle) to mark your own
+area of interest. Once drawn, click "Analyze This Area" in the popup to fetch live weather &amp; AQI
+for that exact spot — this is your own pre-driven planning analysis.
+</p>
+
+<div id="geoStatus" class="geo-status"></div>
+<div id="mapView"></div>
+
+<div class="draw-analysis" id="drawAnalysisBox"></div>
+
+<div class="geo-legend" id="geoLegend" style="display:none;">
+<b>Legend</b>
+<div class="legend-scale">
+<div style="background:#2c7bb6;"></div>
+<div style="background:#abd9e9;"></div>
+<div style="background:#ffffbf;"></div>
+<div style="background:#fdae61;"></div>
+<div style="background:#d7191c;"></div>
+</div>
+<div class="legend-labels">
+<span id="legendMin">Low</span>
+<span id="legendMax">High</span>
+</div>
+<p style="margin-top:8px;color:var(--muted);">
+Circle color and size represent the relative value of the selected layer across cities —
+darker/larger = higher value. Click a marker for exact figures.
+</p>
+</div>
+</div>
+</div>
+
+<!-- ================= FLOOD WATCH ================= -->
+<div class="section" id="flood">
+<div class="card">
+<h2 class="section-title">Flood Watch — River Discharge Forecast</h2>
+<p class="section-subtitle">Live river discharge forecast (m&sup3;/s) from Open-Meteo's free Flood API — a genuine early indicator of flood risk.</p>
+
+<label for="floodCitySelect">Choose location</label>
+<select id="floodCitySelect">
+<option value="28.6139,77.2090">Delhi</option>
+<option value="19.0760,72.8777">Mumbai</option>
+<option value="22.5726,88.3639">Kolkata</option>
+<option value="13.0827,80.2707">Chennai</option>
+<option value="12.9716,77.5946">Bengaluru</option>
+<option value="17.3850,78.4867">Hyderabad</option>
+<option value="18.5204,73.8567">Pune</option>
+<option value="23.0225,72.5714">Ahmedabad</option>
+<option value="26.9124,75.7873">Jaipur</option>
+<option value="26.8467,80.9462">Lucknow</option>
+</select>
+
+<button onclick="getFloodData()" style="width:100%;">Get River Discharge Forecast</button>
+<div id="floodResult" class="result-box"></div>
+</div>
+</div>
+
+<!-- ================= HAZARDS: SEISMIC / LANDSLIDE / GLOF ================= -->
+<div class="section" id="hazards">
+<div class="card">
+<h2 class="section-title">Hazard Watch — Seismic, Landslide &amp; GLOF</h2>
+<p class="section-subtitle">Recent seismic activity (a real landslide-trigger indicator) plus authoritative advisory links for landslide and GLOF monitoring.</p>
+
+<button onclick="getSeismicData()" style="width:100%;">Load Recent Seismic Activity (India &amp; Himalayan Region)</button>
+<div id="quakeResult" class="result-box"></div>
+
+<div class="advisory-grid">
+<div class="advisory-card">
+<span class="tag warn">Landslide Advisory</span>
+<h4>Landslide Risk Monitoring</h4>
+<p>There is currently no free real-time public API for landslide alerts in India.
+For authoritative, official monitoring use the sources below.</p>
+<a href="https://bhuvan.nrsc.gov.in/governance/govern_landslide.php" target="_blank" rel="noopener">NRSC Bhuvan Landslide Portal &rarr;</a><br>
+<a href="https://www.gsi.gov.in" target="_blank" rel="noopener">Geological Survey of India &rarr;</a>
+</div>
+<div class="advisory-card">
+<span class="tag warn">GLOF Advisory</span>
+<h4>Glacial Lake Outburst Flood (GLOF)</h4>
+<p>GLOF monitoring in the Himalayas is handled by specialized regional bodies rather than
+an open public API. Use the official portals below for current advisories.</p>
+<a href="https://www.icimod.org/glof" target="_blank" rel="noopener">ICIMOD GLOF Portal &rarr;</a><br>
+<a href="https://ndma.gov.in" target="_blank" rel="noopener">National Disaster Management Authority &rarr;</a>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ================= CLIMATE NEWS ================= -->
+<div class="section" id="news">
+<div class="card">
+<h2 class="section-title">Climate News Feed</h2>
+<p class="section-subtitle">Latest climate &amp; environment headlines, pulled live via a free RSS-to-JSON bridge.</p>
+<button onclick="getClimateNews()" style="width:100%;">Load Latest Climate News</button>
+<div id="newsResult" class="result-box"></div>
+</div>
+</div>
+
+<footer>
+<div class="footer-inner">
+<div>
+<h4>GeoIndia Climate Hub</h4>
+<p>A free, open-data dashboard combining weather, air quality, flood, seismic and
+climate-news information for India — built entirely on no-cost public APIs.</p>
+</div>
+<div>
+<h4>Data Sources</h4>
+<ul>
+<li><a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo (Weather, Air Quality, Flood, Marine, Geocoding)</a></li>
+<li><a href="https://www.openstreetmap.org" target="_blank" rel="noopener">OpenStreetMap &amp; Leaflet</a></li>
+<li><a href="https://earthquake.usgs.gov" target="_blank" rel="noopener">USGS Earthquake Hazards Program</a></li>
+<li><a href="https://rss2json.com" target="_blank" rel="noopener">RSS2JSON (news bridge)</a></li>
+<li><a href="https://www.emailjs.com" target="_blank" rel="noopener">EmailJS</a></li>
+</ul>
+</div>
+<div>
+<h4>Notes</h4>
+<p>Landslide &amp; GLOF sections link to official government/institutional portals since
+no free real-time API exists for these hazards. All other data updates live on request.</p>
+</div>
+</div>
+<div class="footer-bottom">
+Designed &amp; Developed by <strong>Swatting Mukhopadhyay</strong> &nbsp;|&nbsp; &copy; 2026 GeoIndia Climate Hub
+</div>
+</footer>
+
+<script>
+emailjs.init({
+publicKey:"5ov-H77Eoacrwufyh"
+});
+function detectDevice(){
+let width=window.innerWidth;
+let height=window.innerHeight;
+let device="Desktop";
+if(width<768){
+device="Mobile";
+}
+else if(width<1024){
+device="Tablet";
+}
+document.getElementById("deviceInfo").innerHTML=
+"<b>Detected Device :</b> "+device+
+"<br><b>Resolution :</b> "
++width+" x "+height;
+}
+detectDevice();
+window.onresize=detectDevice;
+function sendMail(){
+let params={
+name:document.getElementById("name").value,
+email:document.getElementById("email").value,
+phone:document.getElementById("phone").value,
+device:document.getElementById("deviceInfo").innerText
+};
+emailjs.send(
+"service_fmxyojy",
+"template_x7fmqwn",
+params
+)
+.then(function(){
+alert("Email Sent Successfully.");
+})
+.catch(function(error){
+alert("Failed : "+JSON.stringify(error));
+});
+}
+
+/* ---------- Weather codes ---------- */
+function weatherCodeToText(code){
+const map={
+0:"Clear sky",1:"Mainly clear",2:"Partly cloudy",3:"Overcast",
+45:"Fog",48:"Depositing rime fog",
+51:"Light drizzle",53:"Moderate drizzle",55:"Dense drizzle",
+61:"Slight rain",63:"Moderate rain",65:"Heavy rain",
+71:"Slight snow",73:"Moderate snow",75:"Heavy snow",
+80:"Slight rain showers",81:"Moderate rain showers",82:"Violent rain showers",
+95:"Thunderstorm",96:"Thunderstorm with slight hail",99:"Thunderstorm with heavy hail"
+};
+return map[code] || "Weather code "+code;
+}
+
+/* ---------- Weather Explorer ---------- */
+function buildUrl(apiType,lat,lon){
+switch(apiType){
+case "forecast":
+return "https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+
+"&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto";
+case "hourly":
+return "https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+
+"&hourly=temperature_2m,weathercode,relative_humidity_2m&forecast_days=1&timezone=auto";
+case "current":
+return "https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+
+"&current_weather=true&timezone=auto";
+case "airquality":
+return "https://air-quality-api.open-meteo.com/v1/air-quality?latitude="+lat+"&longitude="+lon+
+"&hourly=pm10,pm2_5,us_aqi&timezone=auto";
+case "historical":{
+let today=new Date();
+let past=new Date();
+past.setDate(today.getDate()-7);
+let toStr=today.toISOString().split("T")[0];
+let fromStr=past.toISOString().split("T")[0];
+return "https://archive-api.open-meteo.com/v1/archive?latitude="+lat+"&longitude="+lon+
+"&start_date="+fromStr+"&end_date="+toStr+
+"&daily=temperature_2m_max,temperature_2m_min&timezone=auto";
+}
+case "marine":
+return "https://marine-api.open-meteo.com/v1/marine?latitude="+lat+"&longitude="+lon+
+"&daily=wave_height_max&timezone=auto";
+case "geocoding":
+return "https://geocoding-api.open-meteo.com/v1/search?name="+
+encodeURIComponent(document.getElementById("citySelect")
+.options[document.getElementById("citySelect").selectedIndex].text)+
+"&count=1&language=en&format=json";
+default:
+return "";
+}
+}
+
+function renderResult(apiType,data,cityName){
+let html="<h3 style='text-align:center;margin-top:0;'>"+cityName+"</h3>";
+if(apiType==="forecast" || apiType==="historical"){
+let daily=data.daily;
+html+="<div class='data-grid'>";
+for(let i=0;i<daily.time.length;i++){
+html+="<div class='data-tile'>";
+html+="<b>"+daily.time[i]+"</b>";
+if(daily.weathercode){html+=weatherCodeToText(daily.weathercode[i])+"<br>";}
+html+="Max: "+daily.temperature_2m_max[i]+"&deg;C<br>";
+html+="Min: "+daily.temperature_2m_min[i]+"&deg;C";
+html+="</div>";
+}
+html+="</div>";
+}
+else if(apiType==="hourly"){
+let hourly=data.hourly;
+html+="<div class='data-grid'>";
+for(let i=0;i<Math.min(hourly.time.length,8);i++){
+html+="<div class='data-tile'>";
+html+="<b>"+hourly.time[i].split("T")[1]+"</b>";
+html+=weatherCodeToText(hourly.weathercode[i])+"<br>";
+html+="Temp: "+hourly.temperature_2m[i]+"&deg;C<br>";
+html+="Humidity: "+hourly.relative_humidity_2m[i]+"%";
+html+="</div>";
+}
+html+="</div>";
+}
+else if(apiType==="current"){
+let cw=data.current_weather;
+html+="<div class='data-grid'><div class='data-tile' style='flex:1 1 100%;'>";
+html+="<b>Current Conditions</b>";
+html+=weatherCodeToText(cw.weathercode)+"<br>";
+html+="Temp: "+cw.temperature+"&deg;C<br>";
+html+="Wind Speed: "+cw.windspeed+" km/h<br>";
+html+="Time: "+cw.time;
+html+="</div></div>";
+}
+else if(apiType==="airquality"){
+let h=data.hourly;
+html+="<div class='data-grid'>";
+for(let i=0;i<Math.min(h.time.length,6);i++){
+html+="<div class='data-tile'>";
+html+="<b>"+h.time[i].split("T")[1]+"</b>";
+html+="PM2.5: "+h.pm2_5[i]+"<br>";
+html+="PM10: "+h.pm10[i]+"<br>";
+html+="US AQI: "+h.us_aqi[i];
+html+="</div>";
+}
+html+="</div>";
+}
+else if(apiType==="marine"){
+let daily=data.daily;
+html+="<div class='data-grid'>";
+for(let i=0;i<daily.time.length;i++){
+html+="<div class='data-tile'>";
+html+="<b>"+daily.time[i]+"</b>";
+html+="Max Wave Height: "+daily.wave_height_max[i]+" m";
+html+="</div>";
+}
+html+="</div>";
+if(!daily.time.length){
+html+="<p style='text-align:center;'>No marine data (this city may not be coastal).</p>";
+}
+}
+else if(apiType==="geocoding"){
+if(data.results && data.results.length){
+let r=data.results[0];
+html+="<div class='data-grid'><div class='data-tile' style='flex:1 1 100%;'>";
+html+="Name: "+r.name+"<br>";
+html+="Country: "+r.country+"<br>";
+html+="Latitude: "+r.latitude+"<br>";
+html+="Longitude: "+r.longitude+"<br>";
+html+="Timezone: "+r.timezone;
+html+="</div></div>";
+}
+else{
+html+="<p style='text-align:center;'>No results found.</p>";
+}
+}
+document.getElementById("weatherResult").innerHTML=html;
+}
+
+async function getWeather(){
+let resultDiv=document.getElementById("weatherResult");
+let coords=document.getElementById("citySelect").value.split(",");
+let lat=coords[0];
+let lon=coords[1];
+let cityName=document.getElementById("citySelect")
+.options[document.getElementById("citySelect").selectedIndex].text;
+let apiType=document.getElementById("apiSelect").value;
+let url=buildUrl(apiType,lat,lon);
+
+resultDiv.innerHTML="<span class='loading-text'>Loading data for "+cityName+"...</span>"+
+"<br><small style='color:#666;'>"+url+"</small>";
+
+try{
+let response=await fetch(url);
+let rawText=await response.text();
+if(!response.ok){
+resultDiv.innerHTML="<span class='error-text'>Server responded with status "+
+response.status+" "+response.statusText+"</span><br><small>"+rawText+"</small>";
+return;
+}
+let data;
+try{data=JSON.parse(rawText);}
+catch(parseErr){
+resultDiv.innerHTML="<span class='error-text'>Could not parse response as JSON.</span>"+
+"<br><small>"+rawText.substring(0,300)+"</small>";
+return;
+}
+renderResult(apiType,data,cityName);
+}
+catch(error){
+resultDiv.innerHTML="<span class='error-text'>Fetch failed : "+error.message+"</span>"+
+"<br><small>Usually caused by no internet, an ad-blocker, or the file being opened "+
+"locally instead of via a server.</small><br><small>URL attempted: "+url+"</small>";
+}
+}
+
+/* ---------- Location search (Open-Meteo Geocoding, any place in India) ---------- */
+async function geocodeSearch(query){
+let url="https://geocoding-api.open-meteo.com/v1/search?name="+
+encodeURIComponent(query)+"&count=6&language=en&format=json";
+let res=await fetch(url);
+if(!res.ok){throw new Error("HTTP "+res.status);}
+let data=await res.json();
+let results=(data.results||[]).filter(function(r){return r.country_code==="IN";});
+if(results.length===0){results=data.results||[];}
+return results;
+}
+
+async function searchLocation(){
+let query=document.getElementById("citySearchInput").value.trim();
+let box=document.getElementById("citySearchResults");
+if(!query){return;}
+box.style.display="block";
+box.innerHTML="<div>Searching...</div>";
+try{
+let results=await geocodeSearch(query);
+if(results.length===0){
+box.innerHTML="<div>No results found.</div>";
+return;
+}
+box.innerHTML="";
+results.forEach(function(r){
+let div=document.createElement("div");
+div.textContent=r.name+(r.admin1?", "+r.admin1:"")+" — "+r.latitude.toFixed(2)+","+r.longitude.toFixed(2);
+div.onclick=function(){
+let select=document.getElementById("citySelect");
+let opt=document.createElement("option");
+opt.value=r.latitude+","+r.longitude;
+opt.text=r.name+(r.admin1?" ("+r.admin1+")":"");
+select.appendChild(opt);
+select.value=opt.value;
+box.style.display="none";
+getWeather();
+};
+box.appendChild(div);
+});
+}
+catch(err){
+box.innerHTML="<div>Search failed: "+err.message+"</div>";
+}
+}
+
+async function searchLocationOnMap(){
+let query=document.getElementById("geoSearchInput").value.trim();
+let box=document.getElementById("geoSearchResults");
+if(!query){return;}
+box.style.display="block";
+box.innerHTML="<div>Searching...</div>";
+try{
+let results=await geocodeSearch(query);
+if(results.length===0){
+box.innerHTML="<div>No results found.</div>";
+return;
+}
+box.innerHTML="";
+results.forEach(function(r){
+let div=document.createElement("div");
+div.textContent=r.name+(r.admin1?", "+r.admin1:"")+" — "+r.latitude.toFixed(2)+","+r.longitude.toFixed(2);
+div.onclick=async function(){
+box.style.display="none";
+initMap();
+geoMap.setView([r.latitude,r.longitude],9);
+let statusDiv=document.getElementById("geoStatus");
+statusDiv.innerHTML="Fetching data for "+r.name+"...";
+try{
+let layer=document.getElementById("layerSelect").value;
+let res=await fetchCityLayerValue({name:r.name,lat:r.latitude,lon:r.longitude},layer);
+let marker=L.marker([r.latitude,r.longitude]).addTo(geoMap);
+marker.bindPopup("<b>"+r.name+"</b><br>"+layer+" value: "+res.value+"<br>"+res.extra).openPopup();
+geoMarkers.push(marker);
+statusDiv.innerHTML="Located "+r.name+". Marker added to map.";
+}
+catch(err){
+statusDiv.innerHTML="<span class='error-text'>Could not fetch data for "+r.name+": "+err.message+"</span>";
+}
+};
+box.appendChild(div);
+});
+}
+catch(err){
+box.innerHTML="<div>Search failed: "+err.message+"</div>";
+}
+}
+
+/* ---------- Geomatics Map (multi-city spatial analysis) ---------- */
+const megaCities=[
+{name:"Delhi",lat:28.6139,lon:77.2090},
+{name:"Mumbai",lat:19.0760,lon:72.8777},
+{name:"Kolkata",lat:22.5726,lon:88.3639},
+{name:"Chennai",lat:13.0827,lon:80.2707},
+{name:"Bengaluru",lat:12.9716,lon:77.5946},
+{name:"Hyderabad",lat:17.3850,lon:78.4867},
+{name:"Pune",lat:18.5204,lon:73.8567},
+{name:"Ahmedabad",lat:23.0225,lon:72.5714},
+{name:"Jaipur",lat:26.9124,lon:75.7873},
+{name:"Lucknow",lat:26.8467,lon:80.9462}
+];
+
+let geoMap=null;
+let geoMarkers=[];
+let drawnItems=null;
+
+function initMap(){
+if(geoMap===null){
+geoMap=L.map('mapView').setView([22.5,79.0],5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+attribution:'&copy; OpenStreetMap contributors',
+maxZoom:18
+}).addTo(geoMap);
+
+drawnItems=new L.FeatureGroup();
+geoMap.addLayer(drawnItems);
+
+let drawControl=new L.Control.Draw({
+edit:{featureGroup:drawnItems},
+draw:{
+polygon:true,
+polyline:true,
+rectangle:true,
+circle:true,
+marker:true,
+circlemarker:false
+}
+});
+geoMap.addControl(drawControl);
+
+geoMap.on(L.Draw.Event.CREATED,function(e){
+let layer=e.layer;
+drawnItems.addLayer(layer);
+let center;
+let areaText="";
+
+if(layer.getLatLng){
+center=layer.getLatLng();
+}
+else if(layer.getBounds){
+center=layer.getBounds().getCenter();
+if(layer.getLatLngs){
+try{
+let latlngs=layer.getLatLngs()[0]||layer.getLatLngs();
+areaText=" (drawn shape with "+latlngs.length+" vertices)";
+}catch(e2){}
+}
+}
+
+let popupHtml="<b>Selected Area"+areaText+"</b><br>"+
+"Centroid: "+center.lat.toFixed(4)+", "+center.lng.toFixed(4)+"<br>"+
+"<button style='margin-top:8px;padding:6px 10px;font-size:12px;' "+
+"onclick='analyzeDrawnLocation("+center.lat+","+center.lng+")'>Analyze This Area</button>";
+
+layer.bindPopup(popupHtml).openPopup();
+});
+}
+}
+
+function clearDrawnShapes(){
+if(drawnItems){drawnItems.clearLayers();}
+document.getElementById("drawAnalysisBox").style.display="none";
+}
+
+async function analyzeDrawnLocation(lat,lon){
+let box=document.getElementById("drawAnalysisBox");
+box.style.display="block";
+box.innerHTML="Analyzing selected location...";
+try{
+let layer=document.getElementById("layerSelect").value;
+let res=await fetchCityLayerValue({name:"Selected Location",lat:lat,lon:lon},layer);
+box.innerHTML="<b>Analysis for your drawn location ("+lat.toFixed(4)+", "+lon.toFixed(4)+")</b><br>"+
+layer+" value: "+res.value+"<br>"+res.extra;
+}
+catch(err){
+box.innerHTML="<span class='error-text'>Analysis failed: "+err.message+"</span>";
+}
+}
+
+function clearMarkers(){
+geoMarkers.forEach(function(m){geoMap.removeLayer(m);});
+geoMarkers=[];
+}
+
+function valueToColor(value,min,max){
+if(max===min){return "#2c7bb6";}
+let ratio=(value-min)/(max-min);
+const colors=[
+{r:44,g:123,b:182},{r:171,g:217,b:233},{r:255,g:255,b:191},
+{r:253,g:174,b:97},{r:215,g:25,b:28}
+];
+let scaled=ratio*(colors.length-1);
+let idx=Math.floor(scaled);
+let frac=scaled-idx;
+if(idx>=colors.length-1){idx=colors.length-2;frac=1;}
+let c1=colors[idx];
+let c2=colors[idx+1];
+let r=Math.round(c1.r+(c2.r-c1.r)*frac);
+let g=Math.round(c1.g+(c2.g-c1.g)*frac);
+let b=Math.round(c1.b+(c2.b-c1.b)*frac);
+return "rgb("+r+","+g+","+b+")";
+}
+
+async function fetchCityLayerValue(city,layer){
+if(layer==="aqi" || layer==="pm25"){
+let url="https://air-quality-api.open-meteo.com/v1/air-quality?latitude="+city.lat+
+"&longitude="+city.lon+"&hourly=pm2_5,us_aqi&timezone=auto";
+let res=await fetch(url);
+if(!res.ok){throw new Error("HTTP "+res.status);}
+let data=await res.json();
+let value=layer==="aqi"?data.hourly.us_aqi[0]:data.hourly.pm2_5[0];
+return {value:value,extra:"PM2.5: "+data.hourly.pm2_5[0]+" | US AQI: "+data.hourly.us_aqi[0]};
+}
+else{
+let url="https://api.open-meteo.com/v1/forecast?latitude="+city.lat+
+"&longitude="+city.lon+"&current_weather=true&hourly=relative_humidity_2m&timezone=auto";
+let res=await fetch(url);
+if(!res.ok){throw new Error("HTTP "+res.status);}
+let data=await res.json();
+let cw=data.current_weather;
+let humidity=data.hourly.relative_humidity_2m[0];
+let value;
+if(layer==="temperature"){value=cw.temperature;}
+else if(layer==="windspeed"){value=cw.windspeed;}
+else if(layer==="humidity"){value=humidity;}
+return {value:value,extra:"Temp: "+cw.temperature+"&deg;C | Wind: "+cw.windspeed+
+" km/h | Humidity: "+humidity+"% | "+weatherCodeToText(cw.weathercode)};
+}
+}
+
+async function runGeomaticsAnalysis(){
+let statusDiv=document.getElementById("geoStatus");
+let legend=document.getElementById("geoLegend");
+let layer=document.getElementById("layerSelect").value;
+
+initMap();
+clearMarkers();
+legend.style.display="none";
+statusDiv.innerHTML="Fetching live data for all 10 cities, please wait...";
+
+try{
+let results=await Promise.all(megaCities.map(async function(city){
+try{
+let r=await fetchCityLayerValue(city,layer);
+return {city:city,value:r.value,extra:r.extra,ok:true};
+}
+catch(err){
+return {city:city,value:null,extra:err.message,ok:false};
+}
+}));
+
+let validValues=results.filter(function(r){return r.ok && r.value!==null && r.value!==undefined;})
+.map(function(r){return r.value;});
+
+if(validValues.length===0){
+statusDiv.innerHTML="<span class='error-text'>Could not fetch data for any city.</span>";
+return;
+}
+
+let min=Math.min.apply(null,validValues);
+let max=Math.max.apply(null,validValues);
+
+document.getElementById("legendMin").innerText=min.toFixed(1)+" (Low)";
+document.getElementById("legendMax").innerText=max.toFixed(1)+" (High)";
+legend.style.display="block";
+
+let failedCities=[];
+results.forEach(function(r){
+if(!r.ok || r.value===null || r.value===undefined){
+failedCities.push(r.city.name);
+return;
+}
+let color=valueToColor(r.value,min,max);
+let radius=8+((r.value-min)/((max-min)||1))*14;
+let marker=L.circleMarker([r.city.lat,r.city.lon],{
+radius:radius,fillColor:color,color:"#333",weight:1,opacity:1,fillOpacity:0.85
+}).addTo(geoMap);
+marker.bindPopup("<b>"+r.city.name+"</b><br>"+layer+" value : "+r.value+"<br>"+r.extra);
+marker.bindTooltip(r.city.name,{permanent:false,direction:"top"});
+geoMarkers.push(marker);
+});
+
+if(failedCities.length>0){
+statusDiv.innerHTML="Analysis complete. Could not fetch data for: "+failedCities.join(", ")+".";
+}
+else{
+statusDiv.innerHTML="Analysis complete for all 10 mega cities. Click any circle for details.";
+}
+}
+catch(error){
+statusDiv.innerHTML="<span class='error-text'>Geomatics analysis failed : "+error.message+"</span>";
+}
+}
+
+/* ---------- Flood Watch (Open-Meteo Flood API) ---------- */
+async function getFloodData(){
+let resultDiv=document.getElementById("floodResult");
+let coords=document.getElementById("floodCitySelect").value.split(",");
+let lat=coords[0];
+let lon=coords[1];
+let cityName=document.getElementById("floodCitySelect")
+.options[document.getElementById("floodCitySelect").selectedIndex].text;
+
+let url="https://flood-api.open-meteo.com/v1/flood?latitude="+lat+"&longitude="+lon+
+"&daily=river_discharge&forecast_days=14&timezone=auto";
+
+resultDiv.innerHTML="<span class='loading-text'>Loading river discharge forecast for "+cityName+"...</span>";
+
+try{
+let res=await fetch(url);
+let rawText=await res.text();
+if(!res.ok){
+resultDiv.innerHTML="<span class='error-text'>Server responded with status "+res.status+"</span><br><small>"+rawText+"</small>";
+return;
+}
+let data=JSON.parse(rawText);
+if(!data.daily || !data.daily.river_discharge){
+resultDiv.innerHTML="<span class='error-text'>No river discharge data available for this exact point "+
+"(the point may not sit on a modeled river reach).</span>";
+return;
+}
+let daily=data.daily;
+let html="<h3 style='text-align:center;margin-top:0;'>"+cityName+" — Nearest River Discharge</h3>";
+html+="<div class='data-grid'>";
+for(let i=0;i<Math.min(daily.time.length,14);i++){
+html+="<div class='data-tile'>";
+html+="<b>"+daily.time[i]+"</b>";
+html+=daily.river_discharge[i]+" m&sup3;/s";
+html+="</div>";
+}
+html+="</div>";
+html+="<p style='font-size:12px;color:var(--muted);margin-top:12px;'>Discharge is modeled for the "+
+"nearest river reach to these coordinates, not necessarily the exact city center.</p>";
+resultDiv.innerHTML=html;
+}
+catch(error){
+resultDiv.innerHTML="<span class='error-text'>Fetch failed : "+error.message+"</span>";
+}
+}
+
+/* ---------- Seismic Activity (USGS, free, no key) ---------- */
+async function getSeismicData(){
+let resultDiv=document.getElementById("quakeResult");
+resultDiv.innerHTML="<span class='loading-text'>Loading recent seismic activity...</span>";
+
+let url="https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson"+
+"&minmagnitude=4"+
+"&minlatitude=6&maxlatitude=38&minlongitude=68&maxlongitude=98"+
+"&orderby=time&limit=15";
+
+try{
+let res=await fetch(url);
+if(!res.ok){throw new Error("HTTP "+res.status);}
+let data=await res.json();
+if(!data.features || data.features.length===0){
+resultDiv.innerHTML="No significant seismic events (M4+) recorded recently in the India/Himalayan region.";
+return;
+}
+let html="<div class='quake-list'>";
+data.features.forEach(function(f){
+let p=f.properties;
+let date=new Date(p.time).toUTCString();
+html+="<div class='quake-item'><b>M "+p.mag+"</b> — "+p.place+"<br>"+
+"<span style='color:var(--muted);font-size:12px;'>"+date+"</span></div>";
+});
+html+="</div><p style='font-size:12px;color:var(--muted);margin-top:10px;'>"+
+"Source: USGS Earthquake Hazards Program. Seismic activity is a known trigger for landslides "+
+"in hilly/Himalayan terrain — treat clusters of recent events as a caution signal.</p>";
+resultDiv.innerHTML=html;
+}
+catch(error){
+resultDiv.innerHTML="<span class='error-text'>Fetch failed : "+error.message+"</span>";
+}
+}
+
+/* ---------- Climate News (RSS2JSON bridge, free) ---------- */
+async function getClimateNews(){
+let resultDiv=document.getElementById("newsResult");
+resultDiv.innerHTML="<span class='loading-text'>Loading latest climate news...</span>";
+
+let feedUrl="https://news.google.com/rss/search?q=climate%20change%20India&hl=en-IN&gl=IN&ceid=IN:en";
+let url="https://api.rss2json.com/v1/api.json?rss_url="+encodeURIComponent(feedUrl);
+
+try{
+let res=await fetch(url);
+if(!res.ok){throw new Error("HTTP "+res.status);}
+let data=await res.json();
+if(data.status!=="ok" || !data.items || data.items.length===0){
+resultDiv.innerHTML="<span class='error-text'>Could not load news feed right now. "+
+"Try again shortly, or visit Google News directly for India climate coverage.</span>";
+return;
+}
+let html="<div class='news-list'>";
+data.items.slice(0,10).forEach(function(item){
+let date=new Date(item.pubDate).toDateString();
+html+="<div class='news-item'><a href='"+item.link+"' target='_blank' rel='noopener'>"+
+item.title+"</a><div class='meta'>"+date+"</div></div>";
+});
+html+="</div>";
+resultDiv.innerHTML=html;
+}
+catch(error){
+resultDiv.innerHTML="<span class='error-text'>Fetch failed : "+error.message+
+"</span><br><small>The free RSS2JSON bridge can be rate-limited. Try again in a moment.</small>";
+}
+}
+</script>
+</body>
+</html>
